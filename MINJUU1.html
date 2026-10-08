@@ -1,0 +1,5896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#073b68">
+<meta name="description" content="Kubo Match - Localized Dormitory and Roommate Finder for Caraga State University">
+<title>Kubo Match | CSU Housing & Roommate Finder</title>
+
+<!-- Leaflet / OpenStreetMap -->
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+
+<style>
+/* =========================================================
+   KUBO MATCH
+   Single-file HTML prototype
+   ========================================================= */
+
+:root {
+  --navy: #073b68;
+  --navy-2: #0b4d82;
+  --blue: #087ac1;
+  --blue-light: #eaf6ff;
+  --blue-soft: #f3f9fd;
+  --cyan: #18a8e0;
+  --green: #1e9e62;
+  --green-light: #e8f8ef;
+  --yellow: #f5b83d;
+  --yellow-light: #fff8df;
+  --red: #dc4b4b;
+  --red-light: #fff0f0;
+  --purple: #7656c7;
+  --text: #1f3445;
+  --muted: #718395;
+  --border: #d9e5ed;
+  --white: #ffffff;
+  --bg: #f4f8fb;
+  --shadow: 0 8px 25px rgba(17, 61, 91, .08);
+  --shadow-hover: 0 14px 35px rgba(17, 61, 91, .14);
+  --radius: 14px;
+  --radius-sm: 9px;
+  --transition: .25s ease;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* =========================================================
+   GLOBAL
+   ========================================================= */
+
+.hidden {
+  display: none !important;
+}
+
+.text-muted {
+  color: var(--muted);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.container {
+  width: min(1400px, calc(100% - 40px));
+  margin: auto;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--blue-light);
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.badge.green {
+  background: var(--green-light);
+  color: var(--green);
+}
+
+.badge.yellow {
+  background: var(--yellow-light);
+  color: #a66d00;
+}
+
+.badge.red {
+  background: var(--red-light);
+  color: var(--red);
+}
+
+.section-title {
+  margin-bottom: 5px;
+  font-size: 25px;
+  color: var(--navy);
+}
+
+.section-subtitle {
+  color: var(--muted);
+  margin-bottom: 25px;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 22px 0;
+}
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+.btn {
+  border: none;
+  border-radius: 9px;
+  padding: 11px 17px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 750;
+  font-size: 13px;
+  transition:
+    transform var(--transition),
+    box-shadow var(--transition),
+    background var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,.35);
+  transform: translate(-50%, -50%);
+  left: var(--x, 50%);
+  top: var(--y, 50%);
+  transition: width .4s ease, height .4s ease;
+}
+
+.btn:active::after {
+  width: 250px;
+  height: 250px;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 18px rgba(0,0,0,.12);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--blue), #075da2);
+  color: white;
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--navy);
+  border: 1px solid var(--border);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #22ad6b, #148651);
+  color: white;
+}
+
+.btn-danger {
+  background: var(--red);
+  color: white;
+}
+
+.btn-warning {
+  background: var(--yellow);
+  color: #513600;
+}
+
+.btn-small {
+  padding: 8px 11px;
+  font-size: 11px;
+}
+
+.btn-icon {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+}
+
+/* =========================================================
+   LOGIN
+   ========================================================= */
+
+#authScreen {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(24,168,224,.15), transparent 30%),
+    radial-gradient(circle at 85% 75%, rgba(7,59,104,.2), transparent 30%),
+    linear-gradient(135deg, #eef8fd, #dfeff8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 25px;
+}
+
+.auth-wrapper {
+  width: min(1050px, 100%);
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  background: white;
+  border-radius: 25px;
+  overflow: hidden;
+  box-shadow: 0 25px 70px rgba(5, 55, 90, .18);
+}
+
+.auth-brand {
+  padding: 55px;
+  color: white;
+  background:
+    linear-gradient(145deg, rgba(4,53,92,.98), rgba(7,99,150,.94)),
+    url("https://images.unsplash.com/photo-1560185008-b033106af5c3?auto=format&fit=crop&w=1200&q=80")
+    center/cover;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-brand::before {
+  content: "";
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border: 35px solid rgba(255,255,255,.06);
+  border-radius: 50%;
+  right: -100px;
+  top: -100px;
+}
+
+.auth-brand::after {
+  content: "";
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border: 25px solid rgba(255,255,255,.05);
+  border-radius: 50%;
+  left: -80px;
+  bottom: -80px;
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 2;
+}
+
+.logo-house {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: white;
+  color: var(--navy);
+  display: grid;
+  place-items: center;
+  font-size: 27px;
+  box-shadow: 0 8px 25px rgba(0,0,0,.16);
+}
+
+.brand-logo h1 {
+  font-size: 32px;
+  letter-spacing: -.8px;
+}
+
+.brand-tagline {
+  margin-top: 50px;
+  max-width: 470px;
+  position: relative;
+  z-index: 2;
+}
+
+.brand-tagline h2 {
+  font-size: 42px;
+  line-height: 1.08;
+  margin-bottom: 18px;
+}
+
+.brand-tagline p {
+  color: rgba(255,255,255,.78);
+  font-size: 15px;
+}
+
+.feature-pills {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+}
+
+.feature-pill {
+  padding: 8px 11px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.08);
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.auth-card {
+  padding: 40px;
+  background: white;
+}
+
+.auth-card h2 {
+  color: var(--navy);
+  margin-bottom: 7px;
+}
+
+.auth-card > p {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 25px;
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--blue-soft);
+  padding: 4px;
+  border-radius: 10px;
+  margin-bottom: 23px;
+}
+
+.auth-tab {
+  border: none;
+  background: transparent;
+  padding: 10px;
+  border-radius: 7px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.auth-tab.active {
+  background: white;
+  color: var(--navy);
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 750;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: white;
+  border-radius: 9px;
+  padding: 11px 12px;
+  outline: none;
+  color: var(--text);
+  transition: border var(--transition), box-shadow var(--transition);
+}
+
+.form-textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(8,122,193,.1);
+}
+
+.auth-note {
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--blue-soft);
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 14px;
+}
+
+/* =========================================================
+   APPLICATION SHELL
+   ========================================================= */
+
+#app {
+  display: none;
+  min-height: 100vh;
+}
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 245px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #073b68, #052d51);
+  color: white;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  transition: transform .3s ease;
+}
+
+.sidebar-logo {
+  padding: 23px 19px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255,255,255,.09);
+}
+
+.sidebar-logo .logo-house {
+  width: 38px;
+  height: 38px;
+  font-size: 20px;
+  border-radius: 10px;
+}
+
+.sidebar-logo span {
+  font-size: 20px;
+  font-weight: 850;
+}
+
+.sidebar-logo small {
+  display: block;
+  font-size: 8px;
+  font-weight: 400;
+  color: rgba(255,255,255,.65);
+}
+
+.nav {
+  padding: 17px 10px;
+  flex: 1;
+}
+
+.nav-section {
+  text-transform: uppercase;
+  font-size: 8px;
+  letter-spacing: 1.3px;
+  color: rgba(255,255,255,.42);
+  padding: 8px 12px;
+  margin-top: 8px;
+}
+
+.nav-link {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,.68);
+  border-radius: 8px;
+  font-size: 12px;
+  text-align: left;
+  transition: all var(--transition);
+}
+
+.nav-link:hover {
+  color: white;
+  background: rgba(255,255,255,.08);
+  transform: translateX(2px);
+}
+
+.nav-link.active {
+  color: white;
+  background: linear-gradient(90deg, rgba(24,168,224,.25), rgba(24,168,224,.08));
+  box-shadow: inset 3px 0 0 #21afe6;
+}
+
+.nav-icon {
+  width: 22px;
+  text-align: center;
+  font-size: 15px;
+}
+
+.sidebar-footer {
+  padding: 15px;
+  border-top: 1px solid rgba(255,255,255,.09);
+}
+
+.user-mini {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: white;
+  font-size: 12px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #18a8e0, #6d55cb);
+}
+
+.user-mini strong {
+  font-size: 11px;
+  display: block;
+}
+
+.user-mini small {
+  color: rgba(255,255,255,.5);
+  font-size: 9px;
+}
+
+.logout-btn {
+  width: 100%;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.08);
+  color: rgba(255,255,255,.7);
+  padding: 9px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+.main {
+  margin-left: 245px;
+  flex: 1;
+  min-width: 0;
+}
+
+.topbar {
+  height: 65px;
+  background: white;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 27px;
+  position: sticky;
+  top: 0;
+  z-index: 900;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.page-heading h2 {
+  font-size: 17px;
+  color: var(--navy);
+}
+
+.page-heading span {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.notification {
+  width: 37px;
+  height: 37px;
+  border: 1px solid var(--border);
+  background: white;
+  border-radius: 9px;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.notification-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--red);
+  border: 2px solid white;
+  border-radius: 50%;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+
+.mobile-menu {
+  display: none;
+}
+
+.content {
+  padding: 27px;
+  max-width: 1500px;
+  margin: auto;
+}
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+
+.welcome-banner {
+  background:
+    radial-gradient(circle at 90% 10%, rgba(255,255,255,.16), transparent 30%),
+    linear-gradient(135deg, #075083, #0b73ae);
+  color: white;
+  border-radius: 15px;
+  padding: 25px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  overflow: hidden;
+  position: relative;
+}
+
+.welcome-banner::after {
+  content: "⌂";
+  position: absolute;
+  right: 40px;
+  bottom: -40px;
+  font-size: 170px;
+  opacity: .07;
+}
+
+.welcome-banner h1 {
+  font-size: 24px;
+  margin-bottom: 4px;
+  position: relative;
+  z-index: 1;
+}
+
+.welcome-banner p {
+  color: rgba(255,255,255,.75);
+  font-size: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 23px;
+}
+
+.stat-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-hover);
+}
+
+.stat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stat-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--blue-light);
+  color: var(--blue);
+}
+
+.stat-card strong {
+  display: block;
+  font-size: 24px;
+  margin-top: 12px;
+  color: var(--navy);
+}
+
+.stat-card span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1.3fr .7fr;
+  gap: 20px;
+}
+
+.panel {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 17px 19px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-header h3 {
+  font-size: 14px;
+  color: var(--navy);
+}
+
+.panel-body {
+  padding: 19px;
+}
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.quick-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+  background: linear-gradient(145deg, white, #f8fbfd);
+  transition: all var(--transition);
+}
+
+.quick-card:hover {
+  border-color: #a8d8ef;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.quick-card .q-icon {
+  width: 35px;
+  height: 35px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  color: var(--blue);
+  background: var(--blue-light);
+  margin-bottom: 10px;
+}
+
+.quick-card strong {
+  font-size: 12px;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.quick-card span {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* =========================================================
+   PROPERTY DIRECTORY
+   ========================================================= */
+
+.filter-bar {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 13px;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 17px;
+  box-shadow: var(--shadow);
+}
+
+.search-wrap {
+  position: relative;
+  flex: 1;
+}
+
+.search-wrap span {
+  position: absolute;
+  left: 12px;
+  top: 10px;
+  color: var(--muted);
+}
+
+.search-wrap input {
+  padding-left: 34px;
+}
+
+.property-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 17px;
+}
+
+.property-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.property-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: all var(--transition);
+}
+
+.property-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+
+.property-image {
+  height: 160px;
+  position: relative;
+  overflow: hidden;
+  background: #dcecf4;
+}
+
+.property-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .5s ease;
+}
+
+.property-card:hover .property-image img {
+  transform: scale(1.06);
+}
+
+.property-status {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+.property-price {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  background: rgba(4,40,66,.86);
+  color: white;
+  padding: 6px 9px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.property-info {
+  padding: 14px;
+}
+
+.property-info h3 {
+  font-size: 14px;
+  color: var(--navy);
+}
+
+.property-location {
+  color: var(--muted);
+  font-size: 10px;
+  margin: 3px 0 9px;
+}
+
+.property-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.meta-item {
+  font-size: 9px;
+  color: var(--muted);
+  background: var(--blue-soft);
+  padding: 5px 7px;
+  border-radius: 6px;
+}
+
+.property-actions {
+  display: flex;
+  gap: 7px;
+}
+
+.property-actions .btn {
+  flex: 1;
+}
+
+.map-panel {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  min-height: 400px;
+  position: sticky;
+  top: 85px;
+}
+
+#propertyMap {
+  height: 100%;
+  min-height: 520px;
+}
+
+/* =========================================================
+   REVIEWS
+   ========================================================= */
+
+.review-summary {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 25px;
+  padding: 20px;
+}
+
+.rating-big {
+  text-align: center;
+  border-right: 1px solid var(--border);
+}
+
+.rating-number {
+  font-size: 45px;
+  color: var(--navy);
+  font-weight: 900;
+}
+
+.stars {
+  color: #f4b62f;
+  letter-spacing: 2px;
+}
+
+.rating-big small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 5px;
+}
+
+.rating-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  justify-content: center;
+}
+
+.rating-row {
+  display: grid;
+  grid-template-columns: 25px 1fr 30px;
+  gap: 8px;
+  align-items: center;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.rating-progress {
+  height: 7px;
+  border-radius: 999px;
+  background: #edf1f3;
+  overflow: hidden;
+}
+
+.rating-progress div {
+  height: 100%;
+  background: #f4b62f;
+  border-radius: inherit;
+}
+
+.review-list {
+  display: grid;
+  gap: 12px;
+}
+
+.review-card {
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  padding: 15px;
+  background: white;
+}
+
+.review-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.reviewer {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+
+.reviewer strong {
+  display: block;
+  font-size: 11px;
+}
+
+.reviewer small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.review-text {
+  font-size: 11px;
+  color: #526574;
+  margin: 10px 0;
+}
+
+.review-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* =========================================================
+   QUIZ
+   ========================================================= */
+
+.quiz-shell {
+  max-width: 850px;
+  margin: auto;
+}
+
+.progress-wrap {
+  background: white;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 15px;
+  box-shadow: var(--shadow);
+}
+
+.progress-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.progress {
+  height: 8px;
+  background: #e7eef3;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress div {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  border-radius: inherit;
+  transition: width .4s ease;
+}
+
+.question-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  padding: 25px;
+  box-shadow: var(--shadow);
+}
+
+.question-number {
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 850;
+  margin-bottom: 8px;
+}
+
+.question-card h3 {
+  font-size: 20px;
+  color: var(--navy);
+  margin-bottom: 18px;
+}
+
+.answer-list {
+  display: grid;
+  gap: 9px;
+}
+
+.answer-option {
+  border: 1px solid var(--border);
+  background: white;
+  padding: 14px;
+  border-radius: 10px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all var(--transition);
+}
+
+.answer-option:hover {
+  border-color: #86c9e9;
+  background: var(--blue-soft);
+}
+
+.answer-option.selected {
+  border-color: var(--blue);
+  background: var(--blue-light);
+  color: var(--navy);
+  box-shadow: inset 3px 0 0 var(--blue);
+}
+
+.answer-letter {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: #edf4f8;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.answer-option.selected .answer-letter {
+  background: var(--blue);
+  color: white;
+}
+
+.quiz-controls {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+/* =========================================================
+   MATCHES
+   ========================================================= */
+
+.matches-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.match-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
+  transition: all var(--transition);
+}
+
+.match-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-hover);
+}
+
+.match-top {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.match-avatar {
+  width: 47px;
+  height: 47px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: white;
+  font-weight: 850;
+  background: linear-gradient(135deg, #0b79b5, #6c56c9);
+}
+
+.match-info strong {
+  display: block;
+  font-size: 12px;
+}
+
+.match-info small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.match-score {
+  margin: 17px 0 12px;
+}
+
+.score-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.score-row span {
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.score-row strong {
+  color: var(--green);
+  font-size: 15px;
+}
+
+.score-bar {
+  height: 7px;
+  background: #eaf0f3;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.score-bar div {
+  height: 100%;
+  background: linear-gradient(90deg, #1d9d63, #49c988);
+  border-radius: inherit;
+}
+
+.match-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 14px;
+}
+
+.match-tag {
+  font-size: 8px;
+  background: var(--blue-soft);
+  color: var(--muted);
+  padding: 5px 7px;
+  border-radius: 5px;
+}
+
+/* =========================================================
+   PROFILE
+   ========================================================= */
+
+.profile-layout {
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  gap: 17px;
+}
+
+.profile-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 25px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.profile-avatar-large {
+  width: 90px;
+  height: 90px;
+  margin: auto;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #0878b6, #7054c7);
+  color: white;
+  font-size: 28px;
+  font-weight: 900;
+  border: 5px solid #edf7fc;
+}
+
+.profile-card h2 {
+  color: var(--navy);
+  font-size: 18px;
+  margin-top: 13px;
+}
+
+.profile-card p {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.profile-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+  gap: 18px;
+}
+
+.profile-tab {
+  border: none;
+  background: transparent;
+  padding: 10px 3px;
+  font-size: 11px;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+}
+
+.profile-tab.active {
+  color: var(--blue);
+  border-color: var(--blue);
+}
+
+/* =========================================================
+   GROUPS
+   ========================================================= */
+
+.group-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 17px;
+}
+
+.group-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.group-members {
+  display: flex;
+  margin: 15px 0;
+}
+
+.group-member {
+  width: 37px;
+  height: 37px;
+  border-radius: 50%;
+  border: 3px solid white;
+  margin-left: -8px;
+  background: linear-gradient(135deg, #0b79b5, #7d58ca);
+  color: white;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.group-member:first-child {
+  margin-left: 0;
+}
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 34, 54, .57);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 3000;
+  animation: fadeIn .2s ease;
+}
+
+.modal {
+  width: min(650px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: white;
+  border-radius: 17px;
+  box-shadow: 0 30px 90px rgba(0,0,0,.25);
+  animation: modalIn .25s ease;
+}
+
+.modal.large {
+  width: min(950px, 100%);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 17px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+  color: var(--navy);
+  font-size: 15px;
+}
+
+.close-modal {
+  width: 31px;
+  height: 31px;
+  border: none;
+  background: #f1f5f7;
+  border-radius: 7px;
+  color: var(--muted);
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-footer {
+  padding: 15px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* =========================================================
+   PROPERTY DETAIL
+   ========================================================= */
+
+.detail-layout {
+  display: grid;
+  grid-template-columns: 1.1fr .9fr;
+  gap: 18px;
+}
+
+.detail-image {
+  width: 100%;
+  height: 300px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.detail-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail-title {
+  margin-top: 17px;
+}
+
+.detail-title h2 {
+  color: var(--navy);
+  font-size: 23px;
+}
+
+.detail-title p {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 9px;
+  margin: 17px 0;
+}
+
+.info-box {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 11px;
+}
+
+.info-box span {
+  display: block;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.info-box strong {
+  display: block;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+
+#toastContainer {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 5000;
+  display: grid;
+  gap: 9px;
+}
+
+.toast {
+  min-width: 280px;
+  max-width: 360px;
+  padding: 12px 15px;
+  border-radius: 10px;
+  color: white;
+  background: #163c55;
+  box-shadow: 0 10px 30px rgba(0,0,0,.2);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  animation: toastIn .3s ease;
+  font-size: 11px;
+}
+
+.toast.success {
+  background: #168554;
+}
+
+.toast.error {
+  background: #bd3c3c;
+}
+
+.toast.warning {
+  background: #b27a0c;
+}
+
+/* =========================================================
+   LOADING
+   ========================================================= */
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,.88);
+  z-index: 6000;
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(3px);
+}
+
+.loader {
+  text-align: center;
+}
+
+.loader-ring {
+  width: 45px;
+  height: 45px;
+  border: 4px solid #dcecf5;
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  margin: auto auto 10px;
+}
+
+.loader span {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* =========================================================
+   EMPTY STATE
+   ========================================================= */
+
+.empty-state {
+  text-align: center;
+  padding: 50px 20px;
+  color: var(--muted);
+}
+
+.empty-icon {
+  width: 60px;
+  height: 60px;
+  background: var(--blue-light);
+  color: var(--blue);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  margin: auto auto 13px;
+  font-size: 24px;
+}
+
+/* =========================================================
+   ANIMATIONS
+   ========================================================= */
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px) scale(.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(25px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1100px) {
+  .property-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .map-panel {
+    position: static;
+    min-height: 300px;
+  }
+
+  #propertyMap {
+    min-height: 300px;
+  }
+
+  .matches-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .auth-wrapper {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-brand {
+    padding: 35px;
+    min-height: 320px;
+  }
+
+  .brand-tagline {
+    margin-top: 30px;
+  }
+
+  .brand-tagline h2 {
+    font-size: 32px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboard-grid,
+  .profile-layout,
+  .group-grid,
+  .detail-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .main {
+    margin-left: 0;
+  }
+
+  .mobile-menu {
+    display: grid;
+  }
+}
+
+@media (max-width: 650px) {
+  .container {
+    width: min(100% - 24px, 1400px);
+  }
+
+  .content {
+    padding: 17px 12px;
+  }
+
+  .topbar {
+    padding: 0 13px;
+  }
+
+  .page-heading span {
+    display: none;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+
+  .stat-card {
+    padding: 13px;
+  }
+
+  .stat-card strong {
+    font-size: 20px;
+  }
+
+  .property-grid,
+  .matches-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-bar {
+    flex-direction: column;
+  }
+
+  .welcome-banner {
+    padding: 20px;
+  }
+
+  .welcome-banner .btn {
+    display: none;
+  }
+
+  .quick-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .review-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .rating-big {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 18px;
+  }
+
+  .auth-card {
+    padding: 25px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<!-- =======================================================
+     AUTHENTICATION SCREEN
+     ======================================================= -->
+
+<section id="authScreen">
+
+  <div class="auth-wrapper">
+
+    <div class="auth-brand">
+
+      <div class="brand-logo">
+        <div class="logo-house">⌂</div>
+        <div>
+          <h1>Kubo Match</h1>
+          <small>CSU STUDENT HOUSING</small>
+        </div>
+      </div>
+
+      <div class="brand-tagline">
+        <h2>Find Your Home.<br>Find Your People.</h2>
+
+        <p>
+          A localized dormitory and roommate finder designed
+          specifically for Caraga State University students
+          in Ampayon, Butuan City.
+        </p>
+
+        <div class="feature-pills">
+          <span class="feature-pill">⌂ Property Finder</span>
+          <span class="feature-pill">★ Student Reviews</span>
+          <span class="feature-pill">♧ Roommate Matching</span>
+          <span class="feature-pill">⌖ Campus Directions</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="auth-card">
+
+      <h2 id="authTitle">Welcome Back!</h2>
+      <p id="authSubtitle">
+        Sign in using your verified CSU institutional account.
+      </p>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="loginTab">
+          Login
+        </button>
+
+        <button class="auth-tab" id="signupTab">
+          Sign Up
+        </button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form id="loginForm">
+
+        <div class="form-group">
+          <label class="form-label">
+            Institutional Email
+          </label>
+
+          <input
+            class="form-input"
+            id="loginEmail"
+            type="email"
+            placeholder="student@carsu.edu.ph"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            Password
+          </label>
+
+          <input
+            class="form-input"
+            id="loginPassword"
+            type="password"
+            placeholder="Enter your password"
+            required
+          >
+        </div>
+
+        <button class="btn btn-primary full-width" type="submit">
+          Login →
+        </button>
+
+        <div class="auth-note">
+          Demo account:
+          <strong>student@carsu.edu.ph</strong>
+          /
+          <strong>123456</strong>
+        </div>
+
+      </form>
+
+      <!-- SIGNUP FORM -->
+      <form id="signupForm" class="hidden">
+
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+
+          <input
+            class="form-input"
+            id="signupName"
+            type="text"
+            placeholder="Juan Dela Cruz"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            CSU Institutional Email
+          </label>
+
+          <input
+            class="form-input"
+            id="signupEmail"
+            type="email"
+            placeholder="student@carsu.edu.ph"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+
+          <input
+            class="form-input"
+            id="signupPassword"
+            type="password"
+            minlength="6"
+            placeholder="Minimum 6 characters"
+            required
+          >
+        </div>
+
+        <button class="btn btn-primary full-width" type="submit">
+          Create CSU Account →
+        </button>
+
+        <div class="auth-note">
+          Registration is restricted to the official
+          <strong>@carsu.edu.ph</strong> institutional domain.
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- =======================================================
+     APPLICATION
+     ======================================================= -->
+
+<div id="app">
+
+  <div class="app-shell">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+
+      <div class="sidebar-logo">
+        <div class="logo-house">⌂</div>
+
+        <div>
+          <span>Kubo Match</span>
+          <small>CSU STUDENT HOUSING</small>
+        </div>
+      </div>
+
+      <nav class="nav">
+
+        <div class="nav-section">
+          Main
+        </div>
+
+        <button class="nav-link active" data-page="dashboard">
+          <span class="nav-icon">▦</span>
+          Dashboard
+        </button>
+
+        <button class="nav-link" data-page="properties">
+          <span class="nav-icon">⌂</span>
+          Property Directory
+        </button>
+
+        <button class="nav-link" data-page="finder">
+          <span class="nav-icon">♧</span>
+          Roommate Finder
+        </button>
+
+        <button class="nav-link" data-page="reviews">
+          <span class="nav-icon">★</span>
+          Reviews
+        </button>
+
+        <div class="nav-section">
+          Account
+        </div>
+
+        <button class="nav-link" data-page="profile">
+          <span class="nav-icon">●</span>
+          My Profile
+        </button>
+
+        <button class="nav-link" data-page="groups">
+          <span class="nav-icon">♧</span>
+          My Groups
+        </button>
+
+        <button class="nav-link" data-page="settings">
+          <span class="nav-icon">⚙</span>
+          Settings
+        </button>
+
+      </nav>
+
+      <div class="sidebar-footer">
+
+        <div class="user-mini">
+          <div class="avatar" id="sidebarAvatar">
+            JS
+          </div>
+
+          <div>
+            <strong id="sidebarName">
+              Jesse Mae T.
+            </strong>
+
+            <small>
+              CSU Student
+            </small>
+          </div>
+        </div>
+
+        <button class="logout-btn" id="logoutBtn">
+          ↪ Logout
+        </button>
+
+      </div>
+
+    </aside>
+
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <header class="topbar">
+
+        <div class="topbar-left">
+
+          <button
+            class="btn btn-secondary btn-icon mobile-menu"
+            id="mobileMenuBtn"
+          >
+            ☰
+          </button>
+
+          <div class="page-heading">
+            <h2 id="pageTitle">
+              Dashboard
+            </h2>
+
+            <span>
+              Kubo Match · Ampayon, Butuan City
+            </span>
+          </div>
+
+        </div>
+
+        <div class="topbar-actions">
+
+          <button
+            class="notification"
+            onclick="showToast('You have no new notifications.', 'success')"
+          >
+            ♢
+            <span class="notification-dot"></span>
+          </button>
+
+          <button
+            class="avatar"
+            id="topAvatar"
+            onclick="navigate('profile')"
+          >
+            JS
+          </button>
+
+        </div>
+
+      </header>
+
+
+      <!-- PAGE CONTENT -->
+      <section class="content" id="pageContent"></section>
+
+    </main>
+
+  </div>
+
+</div>
+
+
+<!-- =======================================================
+     MODAL
+     ======================================================= -->
+
+<div id="modalRoot"></div>
+
+
+<!-- =======================================================
+     TOAST
+     ======================================================= -->
+
+<div id="toastContainer"></div>
+
+
+<!-- =======================================================
+     LOADING
+     ======================================================= -->
+
+<div class="loading-overlay hidden" id="loadingOverlay">
+
+  <div class="loader">
+    <div class="loader-ring"></div>
+    <span id="loadingText">
+      Loading Kubo Match...
+    </span>
+  </div>
+
+</div>
+
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+/* =========================================================
+   KUBO MATCH APPLICATION
+   ========================================================= */
+
+const STORAGE_KEY = "kuboMatchDemo";
+
+const defaultState = {
+  loggedIn: false,
+
+  user: {
+    name: "Jesse Mae T.",
+    email: "jessamae@carsu.edu.ph",
+    course: "BSIT",
+    year: "2nd Year",
+    password: "123456"
+  },
+
+  quizAnswers: [],
+
+  groups: [],
+
+  reviews: [],
+
+  reportedReviews: [],
+
+  selectedProperty: null
+};
+
+let state = loadState();
+let currentPage = "dashboard";
+let currentQuizQuestion = 0;
+
+function loadState() {
+
+  try {
+
+    const saved = localStorage.getItem(STORAGE_KEY);
+
+    if (saved) {
+      return {
+        ...defaultState,
+        ...JSON.parse(saved)
+      };
+    }
+
+  } catch (error) {
+    console.warn("Storage error:", error);
+  }
+
+  return structuredClone(defaultState);
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+
+/* =========================================================
+   SAMPLE DATA
+   ========================================================= */
+
+const properties = [
+
+  {
+    id: 1,
+    name: "Jasmine Boarding House",
+    category: "Boarding House",
+    location: "Ampayon, Butuan City",
+    price: 3500,
+    rating: 4.5,
+    reviews: 12,
+    distance: "1.2 km",
+    beds: "Single Room",
+    water: "Included",
+    electricity: "Metered",
+    wifi: "Available",
+    amenities: [
+      "Wi-Fi",
+      "Water",
+      "Electricity",
+      "Study Area",
+      "Laundry Area"
+    ],
+    image:
+      "https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&w=900&q=80",
+    lat: 8.9495,
+    lng: 125.5307,
+    description:
+      "Clean and safe boarding house with complete amenities. Near the main road and walking distance to CSU."
+  },
+
+  {
+    id: 2,
+    name: "Casa de Estudiantes",
+    category: "Apartment",
+    location: "Ampayon, Butuan City",
+    price: 4000,
+    rating: 4.3,
+    reviews: 9,
+    distance: "1.5 km",
+    beds: "Shared Room",
+    water: "Included",
+    electricity: "Metered",
+    wifi: "Available",
+    amenities: [
+      "Wi-Fi",
+      "Kitchen",
+      "Parking",
+      "Study Area"
+    ],
+    image:
+      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80",
+    lat: 8.9514,
+    lng: 125.5274,
+    description:
+      "Student-friendly apartment with shared facilities, study spaces and convenient access to local transportation."
+  },
+
+  {
+    id: 3,
+    name: "The Daily Pad",
+    category: "Boarding House",
+    location: "Ampayon, Butuan City",
+    price: 3800,
+    rating: 4.7,
+    reviews: 15,
+    distance: "900 m",
+    beds: "Single Room",
+    water: "Included",
+    electricity: "Metered",
+    wifi: "Available",
+    amenities: [
+      "Wi-Fi",
+      "Air Conditioning",
+      "Study Area",
+      "CCTV"
+    ],
+    image:
+      "https://images.unsplash.com/photo-1560185008-b033106af5c3?auto=format&fit=crop&w=900&q=80",
+    lat: 8.9477,
+    lng: 125.5328,
+    description:
+      "A modern student-oriented boarding house close to CSU Main Campus with reliable internet and study-friendly rooms."
+  },
+
+  {
+    id: 4,
+    name: "Kubo Student Residence",
+    category: "Boarding House",
+    location: "Ampayon, Butuan City",
+    price: 3200,
+    rating: 4.2,
+    reviews: 8,
+    distance: "1.8 km",
+    beds: "Shared Room",
+    water: "Included",
+    electricity: "Metered",
+    wifi: "Available",
+    amenities: [
+      "Wi-Fi",
+      "Kitchen",
+      "Laundry",
+      "Parking"
+    ],
+    image:
+      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80",
+    lat: 8.9532,
+    lng: 125.5239,
+    description:
+      "Affordable student accommodation with shared facilities and flexible room arrangements."
+  }
+];
+
+
+const seedReviews = [
+
+  {
+    id: 1,
+    propertyId: 1,
+    author: "Ana Marie S.",
+    course: "CSU Student",
+    rating: 5,
+    date: "Aug 30, 2026",
+    text:
+      "Clean rooms and reliable Wi-Fi. The owner is responsive and the area feels safe."
+  },
+
+  {
+    id: 2,
+    propertyId: 1,
+    author: "John Carlo D.",
+    course: "CSU Student",
+    rating: 4,
+    date: "Aug 25, 2026",
+    text:
+      "Good location and water pressure is okay. Electricity is separately metered."
+  },
+
+  {
+    id: 3,
+    propertyId: 1,
+    author: "Micaela R.",
+    course: "CSU Student",
+    rating: 5,
+    date: "Aug 19, 2026",
+    text:
+      "Landlord is approachable and friendly. Good choice for students."
+  },
+
+  {
+    id: 4,
+    propertyId: 2,
+    author: "Kyle P.",
+    course: "CSU Student",
+    rating: 4,
+    date: "Aug 15, 2026",
+    text:
+      "Affordable and close to transportation."
+  },
+
+  {
+    id: 5,
+    propertyId: 3,
+    author: "Mark J.",
+    course: "CSU Student",
+    rating: 5,
+    date: "Aug 12, 2026",
+    text:
+      "Very quiet and convenient for studying."
+  }
+];
+
+const reviews = [
+  ...seedReviews
+];
+
+
+/* =========================================================
+   QUIZ QUESTIONS
+   ========================================================= */
+
+const quizQuestions = [
+
+  {
+    category: "Sleep",
+    question: "What time do you usually sleep?",
+    options: [
+      "Before 10 PM",
+      "10 PM – 12 AM",
+      "12 AM – 2 AM",
+      "After 2 AM"
+    ]
+  },
+
+  {
+    category: "Cleanliness",
+    question: "How do you rate your cleanliness habits?",
+    options: [
+      "Very Clean",
+      "Clean",
+      "Moderate",
+      "Relaxed"
+    ]
+  },
+
+  {
+    category: "Study",
+    question: "What is your usual study environment?",
+    options: [
+      "Very Quiet",
+      "Mostly Quiet",
+      "Some Noise",
+      "Noise is Fine"
+    ]
+  },
+
+  {
+    category: "Guests",
+    question: "How often do you expect guests?",
+    options: [
+      "Never",
+      "Rarely",
+      "Sometimes",
+      "Often"
+    ]
+  },
+
+  {
+    category: "Wake",
+    question: "What time do you normally wake up?",
+    options: [
+      "Before 6 AM",
+      "6 – 8 AM",
+      "8 – 10 AM",
+      "After 10 AM"
+    ]
+  },
+
+  {
+    category: "Noise",
+    question: "How much noise can you tolerate?",
+    options: [
+      "Very Low",
+      "Low",
+      "Moderate",
+      "High"
+    ]
+  },
+
+  {
+    category: "Food",
+    question: "How do you normally handle food in your room?",
+    options: [
+      "Never",
+      "Rarely",
+      "Sometimes",
+      "Frequently"
+    ]
+  },
+
+  {
+    category: "Sharing",
+    question: "How comfortable are you sharing household items?",
+    options: [
+      "Very Comfortable",
+      "Comfortable",
+      "Somewhat Comfortable",
+      "Prefer Not To"
+    ]
+  },
+
+  {
+    category: "Study",
+    question: "How many hours do you normally study at home?",
+    options: [
+      "Less than 1 hour",
+      "1 – 2 hours",
+      "2 – 4 hours",
+      "More than 4 hours"
+    ]
+  },
+
+  {
+    category: "Social",
+    question: "How social do you prefer your living space?",
+    options: [
+      "Very Quiet",
+      "Mostly Private",
+      "Balanced",
+      "Very Social"
+    ]
+  }
+
+];
+
+
+/* =========================================================
+   AUTHENTICATION
+   ========================================================= */
+
+const authScreen = document.getElementById("authScreen");
+const app = document.getElementById("app");
+
+function showApp() {
+
+  authScreen.style.display = "none";
+  app.style.display = "block";
+
+  updateUserUI();
+
+  navigate(currentPage);
+
+}
+
+function showAuth() {
+
+  app.style.display = "none";
+  authScreen.style.display = "flex";
+
+}
+
+document
+  .getElementById("loginTab")
+  .addEventListener("click", () => switchAuth("login"));
+
+document
+  .getElementById("signupTab")
+  .addEventListener("click", () => switchAuth("signup"));
+
+function switchAuth(type) {
+
+  const loginTab = document.getElementById("loginTab");
+  const signupTab = document.getElementById("signupTab");
+
+  const loginForm = document.getElementById("loginForm");
+  const signupForm = document.getElementById("signupForm");
+
+  if (type === "login") {
+
+    loginTab.classList.add("active");
+    signupTab.classList.remove("active");
+
+    loginForm.classList.remove("hidden");
+    signupForm.classList.add("hidden");
+
+    document.getElementById("authTitle").textContent =
+      "Welcome Back!";
+
+    document.getElementById("authSubtitle").textContent =
+      "Sign in using your verified CSU institutional account.";
+
+  } else {
+
+    signupTab.classList.add("active");
+    loginTab.classList.remove("active");
+
+    signupForm.classList.remove("hidden");
+    loginForm.classList.add("hidden");
+
+    document.getElementById("authTitle").textContent =
+      "Create Your Account";
+
+    document.getElementById("authSubtitle").textContent =
+      "Join Kubo Match using your official CSU email.";
+
+  }
+
+}
+
+
+document
+  .getElementById("loginForm")
+  .addEventListener("submit", e => {
+
+    e.preventDefault();
+
+    const email =
+      document.getElementById("loginEmail").value.trim();
+
+    const password =
+      document.getElementById("loginPassword").value;
+
+    if (!email.endsWith("@carsu.edu.ph")) {
+
+      showToast(
+        "Only @carsu.edu.ph accounts are allowed.",
+        "error"
+      );
+
+      return;
+    }
+
+    if (
+      email === state.user.email &&
+      password === state.user.password
+    ) {
+
+      state.loggedIn = true;
+
+      saveState();
+
+      showToast(
+        "Welcome back to Kubo Match!",
+        "success"
+      );
+
+      showApp();
+
+    } else if (
+      email === "student@carsu.edu.ph" &&
+      password === "123456"
+    ) {
+
+      state.loggedIn = true;
+
+      state.user.name = "Demo CSU Student";
+      state.user.email = email;
+      state.user.password = password;
+
+      saveState();
+
+      showToast(
+        "Demo account authenticated.",
+        "success"
+      );
+
+      showApp();
+
+    } else {
+
+      showToast(
+        "Invalid credentials. Use the demo account shown below.",
+        "error"
+      );
+
+    }
+
+  });
+
+
+document
+  .getElementById("signupForm")
+  .addEventListener("submit", e => {
+
+    e.preventDefault();
+
+    const name =
+      document.getElementById("signupName").value.trim();
+
+    const email =
+      document.getElementById("signupEmail").value.trim();
+
+    const password =
+      document.getElementById("signupPassword").value;
+
+    if (!email.toLowerCase().endsWith("@carsu.edu.ph")) {
+
+      showToast(
+        "Registration blocked: use your @carsu.edu.ph email.",
+        "error"
+      );
+
+      return;
+    }
+
+    if (password.length < 6) {
+
+      showToast(
+        "Password must contain at least 6 characters.",
+        "error"
+      );
+
+      return;
+    }
+
+    state.user = {
+      name,
+      email,
+      course: "CSU Student",
+      year: "Student",
+      password
+    };
+
+    state.loggedIn = true;
+
+    saveState();
+
+    showToast(
+      "Account created successfully. Demo verification completed.",
+      "success"
+    );
+
+    showApp();
+
+  });
+
+
+document
+  .getElementById("logoutBtn")
+  .addEventListener("click", () => {
+
+    state.loggedIn = false;
+
+    saveState();
+
+    showToast(
+      "You have been logged out.",
+      "success"
+    );
+
+    setTimeout(showAuth, 350);
+
+  });
+
+
+/* =========================================================
+   USER UI
+   ========================================================= */
+
+function getInitials(name) {
+
+  return name
+    .split(" ")
+    .map(word => word[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+}
+
+function updateUserUI() {
+
+  const initials = getInitials(state.user.name);
+
+  document.getElementById("sidebarName").textContent =
+    state.user.name;
+
+  document.getElementById("sidebarAvatar").textContent =
+    initials;
+
+  document.getElementById("topAvatar").textContent =
+    initials;
+
+}
+
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+document.querySelectorAll(".nav-link").forEach(button => {
+
+  button.addEventListener("click", () => {
+
+    navigate(button.dataset.page);
+
+    document
+      .getElementById("sidebar")
+      .classList.remove("open");
+
+  });
+
+});
+
+
+document
+  .getElementById("mobileMenuBtn")
+  .addEventListener("click", () => {
+
+    document
+      .getElementById("sidebar")
+      .classList.toggle("open");
+
+  });
+
+
+function navigate(page) {
+
+  currentPage = page;
+
+  const titles = {
+    dashboard: "Dashboard",
+    properties: "Property Directory",
+    finder: "Roommate Finder",
+    reviews: "Reviews",
+    profile: "My Profile",
+    groups: "My Groups",
+    settings: "Settings"
+  };
+
+  document.getElementById("pageTitle").textContent =
+    titles[page] || "Kubo Match";
+
+  document.querySelectorAll(".nav-link").forEach(link => {
+
+    link.classList.toggle(
+      "active",
+      link.dataset.page === page
+    );
+
+  });
+
+  const content =
+    document.getElementById("pageContent");
+
+  content.innerHTML = "";
+
+  switch(page) {
+
+    case "dashboard":
+      renderDashboard(content);
+      break;
+
+    case "properties":
+      renderProperties(content);
+      break;
+
+    case "finder":
+      renderFinder(content);
+      break;
+
+    case "reviews":
+      renderReviews(content);
+      break;
+
+    case "profile":
+      renderProfile(content);
+      break;
+
+    case "groups":
+      renderGroups(content);
+      break;
+
+    case "settings":
+      renderSettings(content);
+      break;
+
+    default:
+      renderDashboard(content);
+
+  }
+
+}
+
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+
+function renderDashboard(container) {
+
+  container.innerHTML = `
+
+    <div class="welcome-banner">
+
+      <div>
+        <h1>
+          Welcome back, ${escapeHTML(state.user.name.split(" ")[0])}! 👋
+        </h1>
+
+        <p>
+          Find your perfect place and compatible roommates around CSU.
+        </p>
+      </div>
+
+      <button
+        class="btn btn-secondary"
+        onclick="navigate('properties')"
+      >
+        Browse Properties →
+      </button>
+
+    </div>
+
+
+    <div class="stats-grid">
+
+      <div class="stat-card">
+
+        <div class="stat-top">
+          <span class="stat-icon">⌂</span>
+          <span class="badge">LIVE</span>
+        </div>
+
+        <strong>24</strong>
+        <span>Total Listings</span>
+
+      </div>
+
+
+      <div class="stat-card">
+
+        <div class="stat-top">
+          <span class="stat-icon">★</span>
+          <span class="badge green">+12%</span>
+        </div>
+
+        <strong>56</strong>
+        <span>Total Reviews</span>
+
+      </div>
+
+
+      <div class="stat-card">
+
+        <div class="stat-top">
+          <span class="stat-icon">♧</span>
+          <span class="badge green">VERIFIED</span>
+        </div>
+
+        <strong>128</strong>
+        <span>Verified Students</span>
+
+      </div>
+
+
+      <div class="stat-card">
+
+        <div class="stat-top">
+          <span class="stat-icon">♥</span>
+          <span class="badge yellow">MATCH</span>
+        </div>
+
+        <strong>18</strong>
+        <span>Matches Found</span>
+
+      </div>
+
+    </div>
+
+
+    <div class="dashboard-grid">
+
+      <div class="panel">
+
+        <div class="panel-header">
+          <h3>Quick Actions</h3>
+        </div>
+
+        <div class="panel-body">
+
+          <div class="quick-actions">
+
+            <button
+              class="quick-card"
+              onclick="navigate('properties')"
+            >
+
+              <div class="q-icon">⌂</div>
+
+              <strong>Browse Properties</strong>
+
+              <span>
+                Explore boarding houses and apartments.
+              </span>
+
+            </button>
+
+
+            <button
+              class="quick-card"
+              onclick="startQuiz()"
+            >
+
+              <div class="q-icon">♧</div>
+
+              <strong>Find a Roommate</strong>
+
+              <span>
+                Take the 10-question compatibility quiz.
+              </span>
+
+            </button>
+
+
+            <button
+              class="quick-card"
+              onclick="navigate('reviews')"
+            >
+
+              <div class="q-icon">★</div>
+
+              <strong>Read Reviews</strong>
+
+              <span>
+                Check feedback from CSU students.
+              </span>
+
+            </button>
+
+
+            <button
+              class="quick-card"
+              onclick="navigate('groups')"
+            >
+
+              <div class="q-icon">♧</div>
+
+              <strong>My Groups</strong>
+
+              <span>
+                Manage your roommate leasing group.
+              </span>
+
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="panel">
+
+        <div class="panel-header">
+          <h3>Recommended</h3>
+          <button
+            class="btn btn-secondary btn-small"
+            onclick="navigate('properties')"
+          >
+            View All
+          </button>
+        </div>
+
+        <div class="panel-body">
+
+          ${properties.slice(0, 2).map(p => `
+
+            <div style="
+              display:flex;
+              gap:10px;
+              margin-bottom:14px;
+              align-items:center;
+            ">
+
+              <img
+                src="${p.image}"
+                style="
+                  width:60px;
+                  height:52px;
+                  border-radius:8px;
+                  object-fit:cover;
+                "
+              >
+
+              <div style="flex:1">
+
+                <strong style="
+                  display:block;
+                  font-size:11px;
+                ">
+                  ${p.name}
+                </strong>
+
+                <span style="
+                  color:var(--muted);
+                  font-size:9px;
+                ">
+                  ${p.distance} from CSU
+                </span>
+
+                <div class="stars" style="font-size:9px">
+                  ★★★★★
+                  <span style="
+                    color:var(--muted);
+                    letter-spacing:0;
+                  ">
+                    ${p.rating}
+                  </span>
+                </div>
+
+              </div>
+
+              <button
+                class="btn btn-primary btn-small"
+                onclick="openProperty(${p.id})"
+              >
+                View
+              </button>
+
+            </div>
+
+          `).join("")}
+
+        </div>
+
+      </div>
+
+    </div>
+
+  `;
+
+}
+
+
+/* =========================================================
+   PROPERTY DIRECTORY
+   ========================================================= */
+
+function renderProperties(container) {
+
+  container.innerHTML = `
+
+    <div style="
+      display:flex;
+      justify-content:space-between;
+      align-items:end;
+      margin-bottom:18px;
+    ">
+
+      <div>
+        <h1 class="section-title">
+          Property Directory
+        </h1>
+
+        <p class="section-subtitle">
+          Explore verified student accommodations around CSU Main Campus.
+        </p>
+      </div>
+
+      <span class="badge">
+        ${properties.length} Demo Listings
+      </span>
+
+    </div>
+
+
+    <div class="filter-bar">
+
+      <div class="search-wrap">
+
+        <span>⌕</span>
+
+        <input
+          class="form-input"
+          id="propertySearch"
+          placeholder="Search by property name, location, or type..."
+        >
+
+      </div>
+
+
+      <select class="form-select" id="propertyType">
+
+        <option value="all">
+          All Types
+        </option>
+
+        <option value="Boarding House">
+          Boarding House
+        </option>
+
+        <option value="Apartment">
+          Apartment
+        </option>
+
+      </select>
+
+
+      <select class="form-select" id="priceFilter">
+
+        <option value="all">
+          Any Price
+        </option>
+
+        <option value="3000">
+          Under ₱3,000
+        </option>
+
+        <option value="3500">
+          Under ₱3,500
+        </option>
+
+        <option value="4000">
+          Under ₱4,000
+        </option>
+
+      </select>
+
+    </div>
+
+
+    <div class="property-layout">
+
+      <div>
+
+        <div
+          class="property-grid"
+          id="propertyGrid"
+        ></div>
+
+      </div>
+
+
+      <div class="map-panel">
+
+        <div
+          id="propertyMap"
+          style="height:100%"
+        ></div>
+
+      </div>
+
+    </div>
+
+  `;
+
+  renderPropertyCards(properties);
+
+  initializeMap();
+
+  document
+    .getElementById("propertySearch")
+    .addEventListener("input", filterProperties);
+
+  document
+    .getElementById("propertyType")
+    .addEventListener("change", filterProperties);
+
+  document
+    .getElementById("priceFilter")
+    .addEventListener("change", filterProperties);
+
+}
+
+
+function filterProperties() {
+
+  const search =
+    document
+      .getElementById("propertySearch")
+      .value
+      .toLowerCase();
+
+  const type =
+    document
+      .getElementById("propertyType")
+      .value;
+
+  const price =
+    document
+      .getElementById("priceFilter")
+      .value;
+
+  let filtered = properties.filter(p => {
+
+    const matchesSearch =
+      p.name.toLowerCase().includes(search) ||
+      p.location.toLowerCase().includes(search) ||
+      p.category.toLowerCase().includes(search);
+
+    const matchesType =
+      type === "all" || p.category === type;
+
+    const matchesPrice =
+      price === "all" ||
+      p.price <= Number(price);
+
+    return (
+      matchesSearch &&
+      matchesType &&
+      matchesPrice
+    );
+
+  });
+
+  renderPropertyCards(filtered);
+
+}
+
+
+function renderPropertyCards(list) {
+
+  const grid =
+    document.getElementById("propertyGrid");
+
+  if (!grid) return;
+
+  if (!list.length) {
+
+    grid.innerHTML = `
+
+      <div
+        class="panel"
+        style="grid-column:1/-1"
+      >
+
+        <div class="empty-state">
+
+          <div class="empty-icon">⌕</div>
+
+          <h3>
+            No properties found
+          </h3>
+
+          <p>
+            Try changing your search or filters.
+          </p>
+
+        </div>
+
+      </div>
+
+    `;
+
+    return;
+  }
+
+  grid.innerHTML = list.map(p => `
+
+    <article class="property-card">
+
+      <div class="property-image">
+
+        <img
+          src="${p.image}"
+          alt="${escapeHTML(p.name)}"
+          loading="lazy"
+        >
+
+        <span class="property-status badge green">
+          Available
+        </span>
+
+        <span class="property-price">
+          ₱${p.price.toLocaleString()}/month
+        </span>
+
+      </div>
+
+
+      <div class="property-info">
+
+        <h3>
+          ${escapeHTML(p.name)}
+        </h3>
+
+        <div class="property-location">
+          ⌖ ${escapeHTML(p.location)}
+        </div>
+
+
+        <div class="property-meta">
+
+          <span class="meta-item">
+            ${p.category}
+          </span>
+
+          <span class="meta-item">
+            ${p.distance} from CSU
+          </span>
+
+          <span class="meta-item">
+            ★ ${p.rating}
+          </span>
+
+        </div>
+
+
+        <div class="property-actions">
+
+          <button
+            class="btn btn-primary btn-small"
+            onclick="openProperty(${p.id})"
+          >
+            View Details
+          </button>
+
+          <button
+            class="btn btn-secondary btn-small"
+            onclick="focusProperty(${p.id})"
+          >
+            Map
+          </button>
+
+        </div>
+
+      </div>
+
+    </article>
+
+  `).join("");
+
+}
+
+
+/* =========================================================
+   MAP
+   ========================================================= */
+
+let propertyMap = null;
+let mapMarkers = {};
+
+function initializeMap() {
+
+  const mapElement =
+    document.getElementById("propertyMap");
+
+  if (!mapElement) return;
+
+  if (typeof L === "undefined") {
+
+    mapElement.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⌖</div>
+        <h3>Map Preview</h3>
+        <p>
+          Connect to the internet to load OpenStreetMap.
+        </p>
+      </div>
+    `;
+
+    return;
+  }
+
+  if (propertyMap) {
+    propertyMap.remove();
+  }
+
+  propertyMap = L.map("propertyMap").setView(
+    [8.9502, 125.5298],
+    15
+  );
+
+  L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+      attribution:
+        '&copy; OpenStreetMap contributors'
+    }
+  ).addTo(propertyMap);
+
+  mapMarkers = {};
+
+  properties.forEach(property => {
+
+    const marker =
+      L.marker([
+        property.lat,
+        property.lng
+      ]).addTo(propertyMap);
+
+    marker.bindPopup(`
+      <strong>
+        ${escapeHTML(property.name)}
+      </strong>
+      <br>
+      ₱${property.price.toLocaleString()}/month
+      <br><br>
+      <button
+        onclick="openProperty(${property.id})"
+        style="
+          background:#087ac1;
+          color:white;
+          border:0;
+          padding:6px 10px;
+          border-radius:5px;
+          cursor:pointer;
+        "
+      >
+        View Property
+      </button>
+    `);
+
+    mapMarkers[property.id] = marker;
+
+  });
+
+}
+
+
+function focusProperty(id) {
+
+  const property =
+    properties.find(p => p.id === id);
+
+  if (!property) return;
+
+  if (propertyMap) {
+
+    propertyMap.setView(
+      [property.lat, property.lng],
+      17,
+      { animate: true }
+    );
+
+    mapMarkers[id]?.openPopup();
+
+  }
+
+}
+
+
+function openProperty(id) {
+
+  const property =
+    properties.find(p => p.id === id);
+
+  if (!property) return;
+
+  state.selectedProperty = id;
+
+  openModal(`
+  
+    <div class="modal large">
+
+      <div class="modal-header">
+
+        <h3>
+          Property Details
+        </h3>
+
+        <button
+          class="close-modal"
+          onclick="closeModal()"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <div class="modal-body">
+
+        <div class="detail-layout">
+
+          <div>
+
+            <div class="detail-image">
+
+              <img
+                src="${property.image}"
+                alt="${escapeHTML(property.name)}"
+              >
+
+            </div>
+
+            <div class="detail-title">
+
+              <span class="badge green">
+                Available
+              </span>
+
+              <h2>
+                ${escapeHTML(property.name)}
+              </h2>
+
+              <p>
+                ⌖ ${escapeHTML(property.location)}
+              </p>
+
+            </div>
+
+
+            <div class="info-grid">
+
+              <div class="info-box">
+                <span>Monthly Rent</span>
+                <strong>
+                  ₱${property.price.toLocaleString()}
+                </strong>
+              </div>
+
+              <div class="info-box">
+                <span>Distance to CSU</span>
+                <strong>
+                  ${property.distance}
+                </strong>
+              </div>
+
+              <div class="info-box">
+                <span>Room Type</span>
+                <strong>
+                  ${property.beds}
+                </strong>
+              </div>
+
+              <div class="info-box">
+                <span>Water</span>
+                <strong>
+                  ${property.water}
+                </strong>
+              </div>
+
+              <div class="info-box">
+                <span>Electricity</span>
+                <strong>
+                  ${property.electricity}
+                </strong>
+              </div>
+
+              <div class="info-box">
+                <span>Wi-Fi</span>
+                <strong>
+                  ${property.wifi}
+                </strong>
+              </div>
+
+            </div>
+
+
+            <h3 style="
+              color:var(--navy);
+              font-size:13px;
+              margin-bottom:7px;
+            ">
+              Description
+            </h3>
+
+            <p style="
+              color:var(--muted);
+              font-size:11px;
+            ">
+              ${escapeHTML(property.description)}
+            </p>
+
+          </div>
+
+
+          <div>
+
+            <div class="panel">
+
+              <div class="panel-header">
+                <h3>Location</h3>
+              </div>
+
+              <div
+                id="detailMap"
+                style="
+                  height:260px;
+                  border-radius:0 0 12px 12px;
+                "
+              ></div>
+
+            </div>
+
+
+            <div class="panel" style="
+              margin-top:15px;
+            ">
+
+              <div class="panel-header">
+                <h3>Reviews</h3>
+
+                <span class="stars">
+                  ★★★★★
+                </span>
+
+              </div>
+
+              <div class="panel-body">
+
+                <strong style="
+                  color:var(--navy);
+                  font-size:20px;
+                ">
+                  ${property.rating}
+                </strong>
+
+                <span class="text-muted" style="
+                  font-size:10px;
+                ">
+                  / 5 · ${property.reviews} reviews
+                </span>
+
+                <div style="
+                  margin-top:13px;
+                  display:flex;
+                  gap:7px;
+                ">
+
+                  <button
+                    class="btn btn-secondary btn-small"
+                    onclick="navigateToPropertyReviews(${property.id})"
+                  >
+                    See All Reviews
+                  </button>
+
+                  <button
+                    class="btn btn-primary btn-small"
+                    onclick="openReviewModal(${property.id})"
+                  >
+                    Write a Review
+                  </button>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="modal-footer">
+
+        <button
+          class="btn btn-secondary"
+          onclick="closeModal()"
+        >
+          Close
+        </button>
+
+        <button
+          class="btn btn-primary"
+          onclick="getDirections(${property.id})"
+        >
+          ⌖ Get Directions
+        </button>
+
+      </div>
+
+    </div>
+
+  `);
+
+
+  setTimeout(() => {
+
+    if (
+      typeof L !== "undefined" &&
+      document.getElementById("detailMap")
+    ) {
+
+      const detailMap =
+        L.map("detailMap").setView(
+          [property.lat, property.lng],
+          16
+        );
+
+      L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+          attribution:
+            '&copy; OpenStreetMap contributors'
+        }
+      ).addTo(detailMap);
+
+      L.marker([
+        property.lat,
+        property.lng
+      ])
+      .addTo(detailMap)
+      .bindPopup(property.name)
+      .openPopup();
+
+    }
+
+  }, 100);
+
+}
+
+
+function getDirections(id) {
+
+  const property =
+    properties.find(p => p.id === id);
+
+  if (!property) return;
+
+  const destination =
+    `${property.lat},${property.lng}`;
+
+  const url =
+    `https://www.openstreetmap.org/directions?to=${destination}`;
+
+  window.open(url, "_blank");
+
+  showToast(
+    "Opening OpenStreetMap directions...",
+    "success"
+  );
+
+}
+
+
+function navigateToPropertyReviews(id) {
+
+  closeModal();
+
+  navigate("reviews");
+
+  setTimeout(() => {
+
+    const select =
+      document.getElementById("reviewProperty");
+
+    if (select) {
+      select.value = String(id);
+      renderReviewList(id);
+    }
+
+  }, 100);
+
+}
+
+
+/* =========================================================
+   REVIEWS
+   ========================================================= */
+
+function renderReviews(container) {
+
+  const propertyId =
+    state.selectedProperty || 1;
+
+  container.innerHTML = `
+
+    <div style="
+      display:flex;
+      align-items:end;
+      justify-content:space-between;
+      margin-bottom:18px;
+    ">
+
+      <div>
+        <h1 class="section-title">
+          Student Reviews
+        </h1>
+
+        <p class="section-subtitle">
+          Read real feedback about local accommodations.
+        </p>
+      </div>
+
+      <button
+        class="btn btn-primary"
+        onclick="openReviewModal(${propertyId})"
+      >
+        + Write a Review
+      </button>
+
+    </div>
+
+
+    <div class="panel">
+
+      <div class="panel-header">
+
+        <h3>
+          Accommodation Feedback
+        </h3>
+
+        <select
+          class="form-select"
+          id="reviewProperty"
+          style="width:240px"
+        >
+
+          ${properties.map(p => `
+            <option
+              value="${p.id}"
+              ${p.id === propertyId ? "selected" : ""}
+            >
+              ${escapeHTML(p.name)}
+            </option>
+          `).join("")}
+
+        </select>
+
+      </div>
+
+
+      <div class="review-summary">
+
+        <div class="rating-big">
+
+          <div
+            class="rating-number"
+            id="reviewAverage"
+          >
+            4.5
+          </div>
+
+          <div class="stars">
+            ★★★★★
+          </div>
+
+          <small id="reviewCount">
+            12 reviews
+          </small>
+
+        </div>
+
+
+        <div class="rating-bars">
+
+          ${[5,4,3,2,1].map((n,i) => `
+
+            <div class="rating-row">
+
+              <span>
+                ${n}
+              </span>
+
+              <div class="rating-progress">
+                <div style="
+                  width:${[72,20,6,2,0][i]}%
+                "></div>
+              </div>
+
+              <span>
+                ${[72,20,6,2,0][i]}%
+              </span>
+
+            </div>
+
+          `).join("")}
+
+        </div>
+
+      </div>
+
+      <div
+        class="panel-body"
+        id="reviewList"
+      ></div>
+
+    </div>
+
+  `;
+
+
+  document
+    .getElementById("reviewProperty")
+    .addEventListener("change", e => {
+
+      renderReviewList(
+        Number(e.target.value)
+      );
+
+    });
+
+
+  renderReviewList(propertyId);
+
+}
+
+
+function getAllReviews() {
+
+  return [
+    ...reviews,
+    ...(state.reviews || [])
+  ];
+
+}
+
+
+function renderReviewList(propertyId) {
+
+  const list =
+    getAllReviews()
+      .filter(r => r.propertyId === propertyId);
+
+  const target =
+    document.getElementById("reviewList");
+
+  if (!target) return;
+
+  if (!list.length) {
+
+    target.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">★</div>
+        <h3>No reviews yet</h3>
+        <p>Be the first student to leave feedback.</p>
+      </div>
+    `;
+
+    return;
+
+  }
+
+  target.innerHTML = `
+
+    <div class="review-list">
+
+      ${list.map(review => `
+
+        <article class="review-card">
+
+          <div class="review-head">
+
+            <div class="reviewer">
+
+              <div class="avatar">
+                ${getInitials(review.author)}
+              </div>
+
+              <div>
+
+                <strong>
+                  ${escapeHTML(review.author)}
+                </strong>
+
+                <small>
+                  ${escapeHTML(review.course || "CSU Student")}
+                  · ${review.date}
+                </small>
+
+              </div>
+
+            </div>
+
+
+            <div class="stars">
+              ${"★".repeat(review.rating)}
+              ${"☆".repeat(5 - review.rating)}
+            </div>
+
+          </div>
+
+
+          <p class="review-text">
+            ${escapeHTML(review.text)}
+          </p>
+
+
+          <div class="review-footer">
+
+            <span class="badge green">
+              Verified Student
+            </span>
+
+            <button
+              class="btn btn-secondary btn-small"
+              onclick="reportReview(${review.id})"
+            >
+              ⚑ Report
+            </button>
+
+          </div>
+
+        </article>
+
+      `).join("")}
+
+    </div>
+
+  `;
+
+}
+
+
+/* =========================================================
+   REVIEW MODAL
+   ========================================================= */
+
+function openReviewModal(propertyId) {
+
+  const property =
+    properties.find(p => p.id === propertyId);
+
+  openModal(`
+
+    <div class="modal">
+
+      <div class="modal-header">
+
+        <h3>
+          Write a Review
+        </h3>
+
+        <button
+          class="close-modal"
+          onclick="closeModal()"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <form id="reviewForm">
+
+        <div class="modal-body">
+
+          <div class="form-group">
+
+            <label class="form-label">
+              Accommodation
+            </label>
+
+            <select
+              class="form-select"
+              id="newReviewProperty"
+              required
+            >
+
+              ${properties.map(p => `
+                <option
+                  value="${p.id}"
+                  ${p.id === propertyId ? "selected" : ""}
+                >
+                  ${escapeHTML(p.name)}
+                </option>
+              `).join("")}
+
+            </select>
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label class="form-label">
+              Rating
+            </label>
+
+            <select
+              class="form-select"
+              id="newReviewRating"
+              required
+            >
+
+              <option value="5">
+                ★★★★★ — Excellent
+              </option>
+
+              <option value="4">
+                ★★★★☆ — Good
+              </option>
+
+              <option value="3">
+                ★★★☆☆ — Average
+              </option>
+
+              <option value="2">
+                ★★☆☆☆ — Poor
+              </option>
+
+              <option value="1">
+                ★☆☆☆☆ — Very Poor
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label class="form-label">
+              Your Feedback
+            </label>
+
+            <textarea
+              class="form-textarea"
+              id="newReviewText"
+              maxlength="500"
+              placeholder="Share your experience with other CSU students..."
+              required
+            ></textarea>
+
+          </div>
+
+
+          <div class="auth-note">
+            Your public review will not display your institutional
+            email address or other private account information.
+          </div>
+
+        </div>
+
+
+        <div class="modal-footer">
+
+          <button
+            type="button"
+            class="btn btn-secondary"
+            onclick="closeModal()"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            class="btn btn-primary"
+          >
+            Publish Review
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  `);
+
+
+  document
+    .getElementById("reviewForm")
+    .addEventListener("submit", e => {
+
+      e.preventDefault();
+
+      const newReview = {
+
+        id: Date.now(),
+
+        propertyId:
+          Number(
+            document
+              .getElementById("newReviewProperty")
+              .value
+          ),
+
+        author: state.user.name,
+
+        course:
+          state.user.course || "CSU Student",
+
+        rating:
+          Number(
+            document
+              .getElementById("newReviewRating")
+              .value
+          ),
+
+        date:
+          new Date().toLocaleDateString(
+            "en-US",
+            {
+              month: "short",
+              day: "numeric",
+              year: "numeric"
+            }
+          ),
+
+        text:
+          document
+            .getElementById("newReviewText")
+            .value
+            .trim()
+
+      };
+
+      state.reviews.push(newReview);
+
+      saveState();
+
+      closeModal();
+
+      showToast(
+        "Your review has been published.",
+        "success"
+      );
+
+      navigate("reviews");
+
+    });
+
+}
+
+
+function reportReview(id) {
+
+  if (state.reportedReviews.includes(id)) {
+
+    showToast(
+      "This review is already under review.",
+      "warning"
+    );
+
+    return;
+  }
+
+  state.reportedReviews.push(id);
+
+  saveState();
+
+  showToast(
+    "Review flagged as 'under review'. Moderation has been notified.",
+    "success"
+  );
+
+}
+
+
+/* =========================================================
+   ROOMMATE FINDER
+   ========================================================= */
+
+function startQuiz() {
+
+  currentQuizQuestion = 0;
+
+  state.quizAnswers = [];
+
+  navigate("finder");
+
+}
+
+
+function renderFinder(container) {
+
+  if (
+    !state.quizAnswers ||
+    state.quizAnswers.length !== 10
+  ) {
+    state.quizAnswers =
+      new Array(quizQuestions.length).fill(null);
+  }
+
+  const question =
+    quizQuestions[currentQuizQuestion];
+
+  const answer =
+    state.quizAnswers[currentQuizQuestion];
+
+  const percentage =
+    ((currentQuizQuestion + 1) /
+      quizQuestions.length) *
+    100;
+
+  container.innerHTML = `
+
+    <div class="quiz-shell">
+
+      <div style="
+        margin-bottom:18px;
+      ">
+
+        <h1 class="section-title">
+          Roommate Compatibility
+        </h1>
+
+        <p class="section-subtitle">
+          Answer exactly 10 lifestyle questions to find compatible CSU students.
+        </p>
+
+      </div>
+
+
+      <div class="progress-wrap">
+
+        <div class="progress-head">
+
+          <span>
+            Question ${currentQuizQuestion + 1}
+            of ${quizQuestions.length}
+          </span>
+
+          <span>
+            ${Math.round(percentage)}%
+          </span>
+
+        </div>
+
+        <div class="progress">
+
+          <div style="
+            width:${percentage}%
+          "></div>
+
+        </div>
+
+      </div>
+
+
+      <div class="question-card">
+
+        <div class="question-number">
+          ${question.category.toUpperCase()}
+        </div>
+
+        <h3>
+          ${question.question}
+        </h3>
+
+
+        <div class="answer-list">
+
+          ${question.options.map((option,index) => `
+
+            <button
+              class="
+                answer-option
+                ${answer === index ? "selected" : ""}
+              "
+              onclick="selectAnswer(${index})"
+            >
+
+              <span class="answer-letter">
+                ${String.fromCharCode(65 + index)}
+              </span>
+
+              <span>
+                ${escapeHTML(option)}
+              </span>
+
+            </button>
+
+          `).join("")}
+
+        </div>
+
+
+        <div class="quiz-controls">
+
+          <button
+            class="btn btn-secondary"
+            onclick="previousQuestion()"
+            ${currentQuizQuestion === 0 ? "disabled" : ""}
+          >
+            ← Previous
+          </button>
+
+
+          ${
+            currentQuizQuestion <
+            quizQuestions.length - 1
+
+            ?
+
+            `<button
+              class="btn btn-primary"
+              onclick="nextQuestion()"
+            >
+              Next →
+            </button>`
+
+            :
+
+            `<button
+              class="btn btn-success"
+              onclick="finishQuiz()"
+            >
+              Calculate Matches ✓
+            </button>`
+          }
+
+        </div>
+
+      </div>
+
+    </div>
+
+  `;
+
+}
+
+
+function selectAnswer(index) {
+
+  state.quizAnswers[currentQuizQuestion] =
+    index;
+
+  renderFinder(
+    document.getElementById("pageContent")
+  );
+
+}
+
+
+function nextQuestion() {
+
+  if (
+    state.quizAnswers[currentQuizQuestion] === null
+  ) {
+
+    showToast(
+      "Please answer this question before continuing.",
+      "warning"
+    );
+
+    return;
+  }
+
+  currentQuizQuestion++;
+
+  renderFinder(
+    document.getElementById("pageContent")
+  );
+
+}
+
+
+function previousQuestion() {
+
+  if (currentQuizQuestion > 0) {
+
+    currentQuizQuestion--;
+
+    renderFinder(
+      document.getElementById("pageContent")
+    );
+
+  }
+
+}
+
+
+function finishQuiz() {
+
+  const unanswered =
+    state.quizAnswers.findIndex(
+      answer => answer === null ||
+                answer === undefined
+    );
+
+  if (unanswered !== -1) {
+
+    currentQuizQuestion = unanswered;
+
+    showToast(
+      `Please answer question ${unanswered + 1}.`,
+      "warning"
+    );
+
+    renderFinder(
+      document.getElementById("pageContent")
+    );
+
+    return;
+  }
+
+  saveState();
+
+  showToast(
+    "Compatibility analysis completed.",
+    "success"
+  );
+
+  renderMatches();
+
+}
+
+
+/* =========================================================
+   MATCHING ALGORITHM
+   ========================================================= */
+
+function calculateCompatibility(otherAnswers) {
+
+  const answers =
+    state.quizAnswers;
+
+  if (
+    !answers ||
+    answers.length !== 10 ||
+    otherAnswers.length !== 10
+  ) {
+    return 0;
+  }
+
+  let score = 0;
+
+  for (
+    let i = 0;
+    i < answers.length;
+    i++
+  ) {
+
+    const difference =
+      Math.abs(
+        answers[i] -
+        otherAnswers[i]
+      );
+
+    /*
+      Four options:
+      identical = 100%
+      max difference = 0%
+    */
+
+    const questionScore =
+      Math.max(
+        0,
+        1 - difference / 3
+      );
+
+    score += questionScore;
+
+  }
+
+  return Math.round(
+    (score / answers.length) * 100
+  );
+
+}
+
+
+const sampleStudentAnswers = [
+
+  {
+    name: "Jesse Mae T.",
+    course: "BSIT",
+    year: "2nd Year",
+    answers: [1,0,0,1,1,1,1,1,2,1],
+    tags: ["Same Sleep Schedule", "Cleanliness", "Study Habits"]
+  },
+
+  {
+    name: "Carl Stephen",
+    course: "BSCS",
+    year: "3rd Year",
+    answers: [1,1,0,1,1,1,1,1,2,2],
+    tags: ["Same Sleep Schedule", "Study Habits"]
+  },
+
+  {
+    name: "Micaela R.",
+    course: "CSU Student",
+    year: "1st Year",
+    answers: [2,0,0,0,2,0,0,1,3,1],
+    tags: ["Cleanliness", "Study Habits"]
+  },
+
+  {
+    name: "Ella T.",
+    course: "BSIT",
+    year: "2nd Year",
+    answers: [1,0,1,1,1,1,2,1,2,1],
+    tags: ["Same Sleep Schedule", "Quiet Study"]
+  },
+
+  {
+    name: "Renz D.",
+    course: "BSCE",
+    year: "3rd Year",
+    answers: [3,2,3,3,3,3,3,3,0,3],
+    tags: ["Social", "Flexible Schedule"]
+  }
+
+];
+
+
+function renderMatches() {
+
+  const container =
+    document.getElementById("pageContent");
+
+  const matches =
+    sampleStudentAnswers
+      .map(student => ({
+        ...student,
+        score:
+          calculateCompatibility(
+            student.answers
+          )
+      }))
+      .sort(
+        (a,b) =>
+          b.score - a.score
+      );
+
+  container.innerHTML = `
+
+    <div style="
+      display:flex;
+      justify-content:space-between;
+      align-items:end;
+      margin-bottom:20px;
+    ">
+
+      <div>
+
+        <h1 class="section-title">
+          Compatibility Results
+        </h1>
+
+        <p class="section-subtitle">
+          Your best roommate matches based on your 10 lifestyle answers.
+        </p>
+
+      </div>
+
+      <button
+        class="btn btn-secondary"
+        onclick="startQuiz()"
+      >
+        Retake Questionnaire
+      </button>
+
+    </div>
+
+
+    <div class="matches-grid">
+
+      ${matches.map((student,index) => `
+
+        <article class="match-card">
+
+          <div class="match-top">
+
+            <div class="match-avatar">
+              ${getInitials(student.name)}
+            </div>
+
+            <div class="match-info">
+
+              <strong>
+                ${escapeHTML(student.name)}
+              </strong>
+
+              <small>
+                ${escapeHTML(student.course)}
+                · ${escapeHTML(student.year)}
+              </small>
+
+            </div>
+
+          </div>
+
+
+          <div class="match-score">
+
+            <div class="score-row">
+
+              <span>
+                Compatibility Score
+              </span>
+
+              <strong>
+                ${student.score}%
+              </strong>
+
+            </div>
+
+            <div class="score-bar">
+
+              <div style="
+                width:${student.score}%
+              "></div>
+
+            </div>
+
+          </div>
+
+
+          <div class="match-tags">
+
+            ${student.tags.map(tag => `
+              <span class="match-tag">
+                ${escapeHTML(tag)}
+              </span>
+            `).join("")}
+
+          </div>
+
+
+          <div style="
+            display:flex;
+            gap:7px;
+          ">
+
+            <button
+              class="btn btn-secondary btn-small"
+              style="flex:1"
+              onclick="viewMatch('${escapeHTML(student.name)}', ${student.score})"
+            >
+              View Profile
+            </button>
+
+            <button
+              class="btn btn-primary btn-small"
+              style="flex:1"
+              onclick="sendMatchRequest('${escapeHTML(student.name)}')"
+            >
+              Connect
+            </button>
+
+          </div>
+
+        </article>
+
+      `).join("")}
+
+    </div>
+
+  `;
+
+}
+
+
+function viewMatch(name, score) {
+
+  openModal(`
+
+    <div class="modal">
+
+      <div class="modal-header">
+
+        <h3>
+          Roommate Profile
+        </h3>
+
+        <button
+          class="close-modal"
+          onclick="closeModal()"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <div class="modal-body text-center">
+
+        <div class="profile-avatar-large">
+          ${getInitials(name)}
+        </div>
+
+        <h2 style="
+          margin-top:12px;
+          color:var(--navy);
+        ">
+          ${escapeHTML(name)}
+        </h2>
+
+        <p class="text-muted">
+          CSU Student
+        </p>
+
+        <div style="
+          margin:20px 0;
+        ">
+
+          <span class="badge green">
+            ${score}% Compatible
+          </span>
+
+        </div>
+
+        <p class="text-muted" style="
+          font-size:11px;
+        ">
+          Compatibility is calculated from sleep schedule,
+          cleanliness, study habits, guest policies and other
+          lifestyle preferences.
+        </p>
+
+      </div>
+
+
+      <div class="modal-footer">
+
+        <button
+          class="btn btn-secondary"
+          onclick="closeModal()"
+        >
+          Close
+        </button>
+
+        <button
+          class="btn btn-primary"
+          onclick="sendMatchRequest('${escapeHTML(name)}')"
+        >
+          Send Message
+        </button>
+
+      </div>
+
+    </div>
+
+  `);
+
+}
+
+
+function sendMatchRequest(name) {
+
+  closeModal();
+
+  showToast(
+    `Connection request sent to ${name}.`,
+    "success"
+  );
+
+}
+
+
+/* =========================================================
+   PROFILE
+   ========================================================= */
+
+function renderProfile(container) {
+
+  const initials =
+    getInitials(state.user.name);
+
+  container.innerHTML = `
+
+    <div class="profile-layout">
+
+      <aside class="profile-card">
+
+        <div class="profile-avatar-large">
+          ${initials}
+        </div>
+
+        <h2>
+          ${escapeHTML(state.user.name)}
+        </h2>
+
+        <p>
+          ${escapeHTML(state.user.email)}
+        </p>
+
+        <div style="
+          margin-top:13px;
+        ">
+          <span class="badge green">
+            ✓ Verified CSU Student
+          </span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div style="
+          text-align:left;
+          font-size:10px;
+          color:var(--muted);
+        ">
+
+          <p>
+            <strong>Course:</strong>
+            ${escapeHTML(state.user.course)}
+          </p>
+
+          <p>
+            <strong>Year:</strong>
+            ${escapeHTML(state.user.year)}
+          </p>
+
+          <p style="margin-top:7px">
+            <strong>Location:</strong>
+            Ampayon, Butuan City
+          </p>
+
+        </div>
+
+      </aside>
+
+
+      <div class="panel">
+
+        <div class="panel-header">
+          <h3>My Profile</h3>
+        </div>
+
+        <div class="panel-body">
+
+          <div class="profile-tabs">
+
+            <button class="profile-tab active">
+              About
+            </button>
+
+            <button
+              class="profile-tab"
+              onclick="navigate('settings')"
+            >
+              Account Settings
+            </button>
+
+          </div>
+
+
+          <div class="info-grid">
+
+            <div class="info-box">
+              <span>Full Name</span>
+              <strong>
+                ${escapeHTML(state.user.name)}
+              </strong>
+            </div>
+
+            <div class="info-box">
+              <span>Institutional Email</span>
+              <strong>
+                ${escapeHTML(state.user.email)}
+              </strong>
+            </div>
+
+            <div class="info-box">
+              <span>Course</span>
+              <strong>
+                ${escapeHTML(state.user.course)}
+              </strong>
+            </div>
+
+            <div class="info-box">
+              <span>Year Level</span>
+              <strong>
+                ${escapeHTML(state.user.year)}
+              </strong>
+            </div>
+
+          </div>
+
+
+          <div class="divider"></div>
+
+          <h3 style="
+            font-size:13px;
+            color:var(--navy);
+            margin-bottom:10px;
+          ">
+            Roommate Preferences
+          </h3>
+
+          <div class="match-tags">
+
+            <span class="match-tag">
+              Study Friendly
+            </span>
+
+            <span class="match-tag">
+              Clean
+            </span>
+
+            <span class="match-tag">
+              Moderate Social
+            </span>
+
+            <span class="match-tag">
+              CSU Area
+            </span>
+
+          </div>
+
+
+          <button
+            class="btn btn-primary"
+            onclick="navigate('settings')"
+          >
+            Edit Profile
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  `;
+
+}
+
+
+/* =========================================================
+   GROUPS
+   ========================================================= */
+
+function renderGroups(container) {
+
+  const groups =
+    state.groups || [];
+
+  container.innerHTML = `
+
+    <div style="
+      display:flex;
+      justify-content:space-between;
+      align-items:end;
+      margin-bottom:20px;
+    ">
+
+      <div>
+
+        <h1 class="section-title">
+          My Groups
+        </h1>
+
+        <p class="section-subtitle">
+          Create a collective roommate group for leasing.
+        </p>
+
+      </div>
+
+      <button
+        class="btn btn-primary"
+        onclick="createGroup()"
+      >
+        + Create Group
+      </button>
+
+    </div>
+
+
+    ${
+      groups.length === 0
+
+      ?
+
+      `
+
+        <div class="panel">
+
+          <div class="empty-state">
+
+            <div class="empty-icon">
+              ♧
+            </div>
+
+            <h3>
+              No roommate groups yet
+            </h3>
+
+            <p>
+              Match with students first, then create a group.
+            </p>
+
+            <button
+              class="btn btn-primary"
+              style="margin-top:15px"
+              onclick="startQuiz()"
+            >
+              Find Roommates
+            </button>
+
+          </div>
+
+        </div>
+
+      `
+
+      :
+
+      `
+
+        <div class="group-grid">
+
+          ${groups.map(group => `
+
+            <article class="group-card">
+
+              <div class="group-head">
+
+                <div>
+
+                  <span class="badge green">
+                    ${group.members.length} members
+                  </span>
+
+                  <h3 style="
+                    margin-top:8px;
+                    color:var(--navy);
+                    font-size:16px;
+                  ">
+                    ${escapeHTML(group.name)}
+                  </h3>
+
+                </div>
+
+                <button
+                  class="btn btn-secondary btn-small"
+                  onclick="viewGroup(${group.id})"
+                >
+                  Details
+                </button>
+
+              </div>
+
+
+              <div class="group-members">
+
+                ${group.members.map(member => `
+                  <div class="group-member">
+                    ${getInitials(member)}
+                  </div>
+                `).join("")}
+
+              </div>
+
+
+              <p class="text-muted" style="
+                font-size:10px;
+              ">
+                ${group.compatibility || 80}% average compatibility
+              </p>
+
+            </article>
+
+          `).join("")}
+
+        </div>
+
+      `
+
+    }
+
+  `;
+
+}
+
+
+function createGroup() {
+
+  openModal(`
+
+    <div class="modal">
+
+      <div class="modal-header">
+
+        <h3>
+          Create Roommate Group
+        </h3>
+
+        <button
+          class="close-modal"
+          onclick="closeModal()"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <form id="groupForm">
+
+        <div class="modal-body">
+
+          <div class="form-group">
+
+            <label class="form-label">
+              Group Name
+            </label>
+
+            <input
+              class="form-input"
+              id="groupName"
+              placeholder="Roommate Group #1"
+              required
+            >
+
+          </div>
+
+
+          <div class="auth-note">
+
+            Groups can contain up to 4 members.
+            Use compatible matches to create a collective
+            leasing block.
+
+          </div>
+
+        </div>
+
+
+        <div class="modal-footer">
+
+          <button
+            type="button"
+            class="btn btn-secondary"
+            onclick="closeModal()"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            class="btn btn-primary"
+          >
+            Create Group
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  `);
+
+
+  document
+    .getElementById("groupForm")
+    .addEventListener("submit", e => {
+
+      e.preventDefault();
+
+      const name =
+        document
+          .getElementById("groupName")
+          .value
+          .trim();
+
+      state.groups.push({
+
+        id: Date.now(),
+
+        name,
+
+        members: [
+          state.user.name
+        ],
+
+        compatibility: 100,
+
+        createdAt:
+          new Date().toISOString()
+
+      });
+
+      saveState();
+
+      closeModal();
+
+      showToast(
+        "Group profile created successfully.",
+        "success"
+      );
+
+      navigate("groups");
+
+    });
+
+}
+
+
+function viewGroup(id) {
+
+  const group =
+    state.groups.find(g => g.id === id);
+
+  if (!group) return;
+
+  openModal(`
+
+    <div class="modal">
+
+      <div class="modal-header">
+
+        <h3>
+          ${escapeHTML(group.name)}
+        </h3>
+
+        <button
+          class="close-modal"
+          onclick="closeModal()"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <div class="modal-body">
+
+        <span class="badge green">
+          ${group.members.length} Members
+        </span>
+
+
+        <div style="
+          margin-top:18px;
+          display:grid;
+          gap:8px;
+        ">
+
+          ${group.members.map(member => `
+
+            <div style="
+              display:flex;
+              align-items:center;
+              gap:9px;
+              padding:9px;
+              border:1px solid var(--border);
+              border-radius:8px;
+            ">
+
+              <div class="avatar">
+                ${getInitials(member)}
+              </div>
+
+              <strong style="font-size:11px">
+                ${escapeHTML(member)}
+              </strong>
+
+            </div>
+
+          `).join("")}
+
+        </div>
+
+
+        <div class="auth-note" style="
+          margin-top:15px;
+        ">
+          Average compatibility:
+          <strong>${group.compatibility}%</strong>
+        </div>
+
+      </div>
+
+
+      <div class="modal-footer">
+
+        <button
+          class="btn btn-secondary"
+          onclick="closeModal()"
+        >
+          Close
+        </button>
+
+      </div>
+
+    </div>
+
+  `);
+
+}
+
+
+/* =========================================================
+   SETTINGS
+   ========================================================= */
+
+function renderSettings(container) {
+
+  container.innerHTML = `
+
+    <div style="
+      max-width:850px;
+    ">
+
+      <h1 class="section-title">
+        Account Settings
+      </h1>
+
+      <p class="section-subtitle">
+        Manage your Kubo Match student profile.
+      </p>
+
+
+      <div class="panel">
+
+        <div class="panel-header">
+          <h3>Profile Information</h3>
+        </div>
+
+        <form id="settingsForm">
+
+          <div class="panel-body">
+
+            <div class="info-grid">
+
+              <div class="form-group">
+
+                <label class="form-label">
+                  Full Name
+                </label>
+
+                <input
+                  class="form-input"
+                  id="settingsName"
+                  value="${escapeHTML(state.user.name)}"
+                  required
+                >
+
+              </div>
+
+
+              <div class="form-group">
+
+                <label class="form-label">
+                  Institutional Email
+                </label>
+
+                <input
+                  class="form-input"
+                  value="${escapeHTML(state.user.email)}"
+                  disabled
+                >
+
+              </div>
+
+
+              <div class="form-group">
+
+                <label class="form-label">
+                  Course
+                </label>
+
+                <input
+                  class="form-input"
+                  id="settingsCourse"
+                  value="${escapeHTML(state.user.course)}"
+                >
+
+              </div>
+
+
+              <div class="form-group">
+
+                <label class="form-label">
+                  Year Level
+                </label>
+
+                <input
+                  class="form-input"
+                  id="settingsYear"
+                  value="${escapeHTML(state.user.year)}"
+                >
+
+              </div>
+
+            </div>
+
+
+            <div class="divider"></div>
+
+
+            <h3 style="
+              color:var(--navy);
+              font-size:13px;
+              margin-bottom:15px;
+            ">
+              Security
+            </h3>
+
+
+            <div class="form-group">
+
+              <label class="form-label">
+                New Password
+              </label>
+
+              <input
+                class="form-input"
+                id="settingsPassword"
+                type="password"
+                minlength="6"
+                placeholder="Leave blank to keep current password"
+              >
+
+            </div>
+
+
+            <button
+              class="btn btn-primary"
+              type="submit"
+            >
+              Save Changes
+            </button>
+
+
+            <button
+              type="button"
+              class="btn btn-secondary"
+              style="margin-left:7px"
+              onclick="resetPassword()"
+            >
+              Send Password Reset Link
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  `;
+
+
+  document
+    .getElementById("settingsForm")
+    .addEventListener("submit", e => {
+
+      e.preventDefault();
+
+      state.user.name =
+        document
+          .getElementById("settingsName")
+          .value
+          .trim();
+
+      state.user.course =
+        document
+          .getElementById("settingsCourse")
+          .value
+          .trim();
+
+      state.user.year =
+        document
+          .getElementById("settingsYear")
+          .value
+          .trim();
+
+      const password =
+        document
+          .getElementById("settingsPassword")
+          .value;
+
+      if (password) {
+
+        if (password.length < 6) {
+
+          showToast(
+            "Password must contain at least 6 characters.",
+            "error"
+          );
+
+          return;
+
+        }
+
+        state.user.password = password;
+
+      }
+
+      saveState();
+
+      updateUserUI();
+
+      showToast(
+        "Profile settings saved.",
+        "success"
+      );
+
+      navigate("profile");
+
+    });
+
+}
+
+
+function resetPassword() {
+
+  showToast(
+    `Password reset link sent to ${state.user.email}.`,
+    "success"
+  );
+
+}
+
+
+/* =========================================================
+   MODALS
+   ========================================================= */
+
+function openModal(content) {
+
+  document.getElementById("modalRoot").innerHTML = `
+
+    <div
+      class="modal-backdrop"
+      onclick="handleBackdrop(event)"
+    >
+
+      ${content}
+
+    </div>
+
+  `;
+
+}
+
+
+function handleBackdrop(event) {
+
+  if (
+    event.target.classList.contains(
+      "modal-backdrop"
+    )
+  ) {
+    closeModal();
+  }
+
+}
+
+
+function closeModal() {
+
+  document.getElementById(
+    "modalRoot"
+  ).innerHTML = "";
+
+}
+
+
+/* =========================================================
+   TOASTS
+   ========================================================= */
+
+function showToast(message, type = "") {
+
+  const container =
+    document.getElementById("toastContainer");
+
+  const toast =
+    document.createElement("div");
+
+  toast.className =
+    `toast ${type}`;
+
+  const icon =
+    type === "success"
+      ? "✓"
+      : type === "error"
+        ? "!"
+        : type === "warning"
+          ? "!"
+          : "i";
+
+  toast.innerHTML = `
+
+    <strong style="
+      width:20px;
+      height:20px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      background:rgba(255,255,255,.18);
+    ">
+      ${icon}
+    </strong>
+
+    <span>
+      ${escapeHTML(message)}
+    </span>
+
+  `;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(20px)";
+
+    setTimeout(
+      () => toast.remove(),
+      250
+    );
+
+  }, 3200);
+
+}
+
+
+/* =========================================================
+   LOADING
+   ========================================================= */
+
+function showLoading(text = "Loading Kubo Match...") {
+
+  document.getElementById(
+    "loadingText"
+  ).textContent = text;
+
+  document.getElementById(
+    "loadingOverlay"
+  ).classList.remove("hidden");
+
+}
+
+
+function hideLoading() {
+
+  document.getElementById(
+    "loadingOverlay"
+  ).classList.add("hidden");
+
+}
+
+
+/* =========================================================
+   BUTTON RIPPLE POSITION
+   ========================================================= */
+
+document.addEventListener("click", e => {
+
+  const button =
+    e.target.closest(".btn");
+
+  if (!button) return;
+
+  const rect =
+    button.getBoundingClientRect();
+
+  button.style.setProperty(
+    "--x",
+    `${e.clientX - rect.left}px`
+  );
+
+  button.style.setProperty(
+    "--y",
+    `${e.clientY - rect.top}px`
+  );
+
+});
+
+
+/* =========================================================
+   SECURITY / HTML ESCAPING
+   ========================================================= */
+
+function escapeHTML(value) {
+
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+
+}
+
+
+/* =========================================================
+   INITIALIZATION
+   ========================================================= */
+
+if (state.loggedIn) {
+
+  showApp();
+
+} else {
+
+  showAuth();
+
+}
+
+
+/* =========================================================
+   DEMO LOADING FEEDBACK
+   ========================================================= */
+
+window.addEventListener("load", () => {
+
+  hideLoading();
+
+});
+
+
+/* =========================================================
+   KEYBOARD SHORTCUT
+   ========================================================= */
+
+document.addEventListener("keydown", e => {
+
+  if (e.key === "Escape") {
+    closeModal();
+  }
+
+});
+
+
+/* =========================================================
+   PERFORMANCE NOTE
+   =========================================================
+
+   This prototype:
+   - uses lazy-loaded property images
+   - uses CSS transitions instead of heavy animation
+   - keeps data client-side for the MVP demo
+   - avoids unnecessary DOM updates
+   - supports responsive layouts from mobile to desktop
+
+   For production, connect:
+   Firebase/Supabase
+   ↓
+   Authentication
+   ↓
+   Properties
+   ↓
+   Reviews
+   ↓
+   Questionnaire
+   ↓
+   Groups
+   ↓
+   Moderation
+   ========================================================= */
+
+</script>
+
+</body>
+</html>
